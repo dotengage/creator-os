@@ -1,8 +1,9 @@
 # Creator OS
 
 A single place to run the business side of being a creator: brand deals, invoices,
-money, goals, ideas, and the content calendar. Everything lives in your browser —
-no account, no server, no data leaving the machine.
+money, goals, ideas, and the content calendar. It runs entirely in the browser with
+no backend of its own. Optional cloud sync over a private GitHub Gist keeps your
+laptop and your phone looking at the same data.
 
 ```bash
 npm install
@@ -81,13 +82,49 @@ Charcoal, and five light pastels — Sand, Mint, Lavender, Blush, Sky. Every col
 in the UI, including buttons, charts and badges, is derived from CSS variables, so
 the whole app recolours together.
 
+## Hosting it
+
+The build is static, so GitHub Pages is enough. `.github/workflows/deploy.yml`
+builds and publishes on every push to `main` — in the repo, set
+**Settings → Pages → Source** to *GitHub Actions* once and it runs from then on.
+Vite's `base` is `'./'` and routing is hash-based, so it works from a
+`/repo/` subpath, a custom domain, or a local file with no 404s on refresh.
+
+There is a web manifest and real icons, so *Add to Home Screen* on a phone gives
+a standalone app rather than a browser tab.
+
+## Cloud sync
+
+Optional, off by default. Turn it on in Settings and your data lives in a private
+GitHub Gist that every device reads from — the cloud copy is the source of truth.
+
+- **Setup:** create a GitHub token with only the `gist` scope (the Settings screen
+  links straight to the right page with it pre-ticked), paste it, and choose
+  *Start a new cloud store*. On your other devices, paste the same token plus the
+  Store ID and choose *Connect to an existing store*.
+- **What syncs when:** changes go up about two seconds after you stop typing, and
+  each device re-checks for remote edits every 45 seconds and whenever you switch
+  back to the tab.
+- **Never merges.** If two devices diverge, the push is aborted before it writes
+  and you are asked which copy to keep. Nothing is silently combined or clobbered.
+- **Stays in its own lane.** The app creates its own gist and stamps the payload
+  with an app marker. Any gist without that marker is refused outright — it is
+  never read from and never written to — so other apps' gists cannot be pulled
+  into this one or overwritten by it.
+- **The token** is kept in `localStorage` under a separate key from your data. It
+  is never written into the gist, a JSON backup or a spreadsheet export.
+
+One caveat worth knowing: a secret gist is unlisted, not access-controlled.
+Anyone holding the Store ID could read it, so keep that ID to yourself. Revoking
+the token on GitHub cuts every device off at once.
+
 ## Your data
 
 State is kept in `localStorage` under `creator-os.state.v1`, written on a short
-debounce and flushed when the tab closes. That means it is fast and private, but
-also that **clearing your browser data deletes it**. Settings → *Save backup
-(.json)* writes a file that restores everything exactly; *Export everything
-(.xlsx)* produces a nine-sheet workbook for reading elsewhere.
+debounce and flushed when the tab closes. Without cloud sync each device keeps its
+own separate copy, and **clearing your browser data deletes it**. Settings →
+*Save backup (.json)* writes a file that restores everything exactly; *Export
+everything (.xlsx)* produces a nine-sheet workbook for reading elsewhere.
 
 Settings also has *Load sample data* if you want to look around with something in
 it first, and *Erase everything* to get back to empty.
@@ -109,6 +146,7 @@ src/
     selectors.ts    date ranges, the transaction ledger, "needs attention" queries
     utils.ts        dates, currency, invoice maths, goal pace
     export.ts       CSV / XLSX writers
+    sync.tsx        gist-backed cloud sync, conflict detection, app-marker guard
     pdf/invoice.ts  the three invoice templates
     pdf/doc.ts      script, template and idea one-pagers
   components/       UI primitives, app shell, category controls
@@ -124,3 +162,8 @@ src/
   released, so the sequence keeps no holes.
 - `₹` has no glyph in jsPDF's built-in fonts, so PDFs render it as `Rs.` rather
   than a broken character.
+- Loading state never falls back to empty on a read error, because the next
+  autosave would then overwrite good data. An unreadable payload is set aside
+  under a `.unreadable.<timestamp>` key instead.
+- `node scripts/make-icons.mjs` regenerates the app icons; it encodes the PNGs
+  with Node's zlib and needs no image dependency.

@@ -206,7 +206,7 @@ export function Segmented<T extends string>({ options, value, onChange, size = '
 }
 
 /* ------------------------------------------------------------------ modal */
-export function Modal({ open, onClose, title, subtitle, children, footer, size = 'md', headerRight }: {
+export function Modal({ open, onClose, title, subtitle, children, footer, size = 'md', headerRight, dismissible = true }: {
   open: boolean
   onClose: () => void
   title?: ReactNode
@@ -215,10 +215,13 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
   footer?: ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl'
   headerRight?: ReactNode
+  /** Set false when the dialog demands an explicit choice — no X, no Escape,
+   *  no click-away, so there is never a control that appears to do nothing. */
+  dismissible?: boolean
 }) {
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && dismissible) onClose() }
     document.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -226,7 +229,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
     }
-  }, [open, onClose])
+  }, [open, onClose, dismissible])
 
   const widths = { sm: 'sm:max-w-md', md: 'sm:max-w-2xl', lg: 'sm:max-w-4xl', xl: 'sm:max-w-6xl' }
 
@@ -237,7 +240,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            onClick={onClose}
+            onClick={dismissible ? onClose : undefined}
             className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
           />
           <motion.div
@@ -260,7 +263,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
                   {subtitle && <p className="mt-0.5 truncate text-[12.5px] text-muted">{subtitle}</p>}
                 </div>
                 {headerRight}
-                <IconButton label="Close" onClick={onClose}><X size={17} /></IconButton>
+                {dismissible && <IconButton label="Close" onClick={onClose}><X size={17} /></IconButton>}
               </header>
             )}
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>

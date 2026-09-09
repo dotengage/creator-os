@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   BarChart3, BookMarked, CalendarRange, FileText, Home, Lightbulb, MoreHorizontal,
@@ -11,6 +11,7 @@ import { THEMES } from '../lib/types'
 import { cx } from '../lib/utils'
 import { dealsAwaitingInvoice, dueFollowUps, overdueInvoices } from '../lib/selectors'
 import { IconButton } from './ui'
+import { SyncBadge } from './SyncPanel'
 
 export interface NavEntry {
   to: string
@@ -142,6 +143,7 @@ const NavItem = ({ entry, count, onNavigate }: { entry: NavEntry; count?: number
 /* --------------------------------------------------------------- sidebar */
 function Sidebar() {
   const attention = useAttention()
+  const navigate = useNavigate()
   const groups: NavEntry['group'][] = ['work', 'money', 'library']
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[244px] flex-col border-r border-line bg-surface md:flex">
@@ -160,6 +162,9 @@ function Sidebar() {
           </div>
         ))}
       </nav>
+      <div className="border-t border-line px-3 py-2">
+        <SyncBadge onOpen={() => navigate('/settings')} />
+      </div>
       <div className="border-t border-line px-4 py-4">
         <p className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.09em] text-faint">Appearance</p>
         <ThemePicker />
@@ -173,6 +178,7 @@ function MobileNav() {
   const [more, setMore] = useState(false)
   const attention = useAttention()
   const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => setMore(false), [location.pathname])
 
@@ -204,6 +210,9 @@ function MobileNav() {
                 {rest.map((n) => (
                   <NavItem key={n.to} entry={n} count={attention[n.to]} onNavigate={() => setMore(false)} />
                 ))}
+              </div>
+              <div className="border-t border-line px-4 py-2">
+                <SyncBadge onOpen={() => { setMore(false); navigate('/settings') }} />
               </div>
               <div className="border-t border-line px-5 py-4">
                 <p className="mb-2.5 text-[10.5px] font-bold uppercase tracking-[0.09em] text-faint">Appearance</p>

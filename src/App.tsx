@@ -1,7 +1,9 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { StoreProvider } from './lib/store'
+import { SyncProvider } from './lib/sync'
 import { ConfirmProvider, ToastProvider } from './components/ui'
 import Layout from './components/Layout'
+import { SyncConflictDialog } from './components/SyncPanel'
 import Dashboard from './pages/Dashboard'
 import Templates from './pages/Templates'
 import Outreach from './pages/Outreach'
@@ -19,6 +21,7 @@ export default function App() {
     <StoreProvider>
       <ToastProvider>
         <ConfirmProvider>
+          <SyncProvider>
           <HashRouter>
             <Layout>
               <Routes>
@@ -37,6 +40,8 @@ export default function App() {
               </Routes>
             </Layout>
           </HashRouter>
+          <SyncConflictDialog />
+          </SyncProvider>
         </ConfirmProvider>
       </ToastProvider>
     </StoreProvider>

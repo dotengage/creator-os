@@ -49,20 +49,42 @@ export const emptyState = (): AppState => ({
  * never runs — so sweep those abandoned shells on the next load.
  */
 const isAbandonedDraft = (inv: Invoice): boolean => {
-  if (inv.status !== 'draft') return false
-  if (inv.to.name.trim() || inv.notes.trim()) return false
-  if (inv.items.some((i) => i.description.trim() || i.rate > 0)) return false
+  if (!inv || inv.status !== 'draft') return false
+  if (inv.to?.name?.trim() || inv.notes?.trim()) return false
+  if (inv.items?.some((i) => i.description?.trim() || i.rate > 0)) return false
   const ageHours = (Date.now() - new Date(inv.createdAt).getTime()) / 3600000
   return ageHours > 12
 }
 
 const load = (): AppState => {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (!raw) return emptyState()
+
+  let parsed: Partial<AppState>
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return emptyState()
-    const parsed = JSON.parse(raw) as Partial<AppState>
+    parsed = JSON.parse(raw) as Partial<AppState>
+  } catch {
+    // Never silently start empty on top of a payload we could not read — the
+    // first autosave would overwrite it for good. Keep the original aside.
+    try {
+      localStorage.setItem(`${STORAGE_KEY}.unreadable.${Date.now()}`, raw)
+    } catch {
+      /* nothing more we can do */
+    }
+    return emptyState()
+  }
+
+  try {
+    // Housekeeping must never cost data: fall back to the untouched list.
+    if (Array.isArray(parsed.invoices)) {
+      parsed.invoices = parsed.invoices.filter((i) => !isAbandonedDraft(i))
+    }
+  } catch {
+    /* keep parsed.invoices exactly as they were */
+  }
+
+  try {
     const base = emptyState()
-    if (parsed.invoices) parsed.invoices = parsed.invoices.filter((i) => !isAbandonedDraft(i))
     return {
       ...base,
       ...parsed,
@@ -80,7 +102,8 @@ const load = (): AppState => {
       goals: parsed.goals ?? [],
     }
   } catch {
-    return emptyState()
+    // Shape-merge failed: hand back whatever parsed cleanly rather than nothing.
+    return { ...emptyState(), ...parsed } as AppState
   }
 }
 

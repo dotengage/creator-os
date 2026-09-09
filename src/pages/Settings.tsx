@@ -11,6 +11,7 @@ import {
   Badge, Button, Card, Field, Input, PageHeader, Select, Textarea,
   useConfirm, useToast,
 } from '../components/ui'
+import { SyncSettings } from '../components/SyncPanel'
 
 const CURRENCIES = [
   { code: 'INR', symbol: '₹' }, { code: 'USD', symbol: '$' }, { code: 'EUR', symbol: '€' },
@@ -367,6 +368,8 @@ export default function Settings() {
             />
           </div>
         </Card>
+
+        <SyncSettings />
 
         {/* ----------------------------------------------------------- data */}
         <Card className="p-4 sm:p-5 lg:col-span-2">
