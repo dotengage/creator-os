@@ -237,6 +237,10 @@ export interface Goal {
 /* --------------------------------------------------------------- settings */
 export interface Settings {
   theme: ThemeName
+  /** Replaces "Creator OS" in the top-left corner. */
+  appName: string
+  /** Square data URL shown instead of the default mark. Empty = default. */
+  avatar: string
   creatorName: string
   currency: string
   currencySymbol: string

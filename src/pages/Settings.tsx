@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react'
 import {
-  AlertTriangle, Database, Download, FileJson, Palette, Sparkles, Trash2, Upload, X,
+  AlertTriangle, Database, Download, FileJson, ImagePlus, Palette, Sparkles,
+  Trash2, Upload, User, X,
 } from 'lucide-react'
 import { demoState, emptyState, useStore } from '../lib/store'
 import type { AppState, GstType, InvoiceTemplate, ThemeName } from '../lib/types'
 import { THEMES } from '../lib/types'
 import { cx, deliverableSummary, invoiceTotals, parseNum, uniq } from '../lib/utils'
 import { exportJSON, exportWorkbook, sheetFrom } from '../lib/export'
+import { fileToAvatar } from '../lib/image'
 import {
   Badge, Button, Card, Field, Input, PageHeader, Select, Textarea,
   useConfirm, useToast,
@@ -204,6 +206,8 @@ export default function Settings() {
       <PageHeader title="Settings" subtitle="Set this up once and the rest of the app stops asking." />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <BrandCard />
+
         {/* -------------------------------------------------------- theme */}
         <Card className="p-4 sm:p-5 lg:col-span-2">
           <SectionTitle icon={<Palette size={15} />} title="Appearance" hint="Everything else recolours to match." />
@@ -233,16 +237,10 @@ export default function Settings() {
         <Card className="p-4 sm:p-5">
           <SectionTitle title="Your business" hint="Pre-fills the “from” side of every invoice." />
           <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Display name" hint="Shown in the sidebar">
-                <Input value={settings.creatorName} onChange={(e) => setSettings({ creatorName: e.target.value })}
-                  placeholder="Your name or studio" />
-              </Field>
-              <Field label="Legal / billing name">
-                <Input value={settings.business.name} onChange={(e) => setBusiness({ name: e.target.value })}
-                  placeholder="Appears on invoices" />
-              </Field>
-            </div>
+            <Field label="Legal / billing name" hint="Appears on invoices">
+              <Input value={settings.business.name} onChange={(e) => setBusiness({ name: e.target.value })}
+                placeholder="Your studio name" />
+            </Field>
             <Field label="Address">
               <Textarea rows={3} value={settings.business.address} onChange={(e) => setBusiness({ address: e.target.value })}
                 placeholder={'Street\nCity, State PIN'} />
@@ -414,6 +412,101 @@ export default function Settings() {
         </Card>
       </div>
     </>
+  )
+}
+
+/* ------------------------------------------------------------ brand card */
+function BrandCard() {
+  const { settings, setSettings } = useStore()
+  const toast = useToast()
+  const confirm = useConfirm()
+  const pickerRef = useRef<HTMLInputElement>(null)
+  const [busy, setBusy] = useState(false)
+
+  const choose = async (file: File) => {
+    setBusy(true)
+    try {
+      setSettings({ avatar: await fileToAvatar(file) })
+      toast('Picture updated')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'That image could not be used', 'bad')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const clear = async () => {
+    const ok = await confirm({ title: 'Remove your picture?', confirmLabel: 'Remove', tone: 'danger' })
+    if (ok) {
+      setSettings({ avatar: '' })
+      toast('Back to the default mark', 'info')
+    }
+  }
+
+  return (
+    <Card className="p-4 sm:p-5 lg:col-span-2">
+      <SectionTitle
+        icon={<User size={15} />}
+        title="Your brand"
+        hint="What shows in the top-left corner, on every device you sync to."
+      />
+
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <div className="flex items-center gap-3">
+          {settings.avatar ? (
+            <img src={settings.avatar} alt="" className="h-16 w-16 shrink-0 rounded-2xl object-cover shadow-soft" />
+          ) : (
+            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-accent text-accent-ink shadow-soft">
+              <Palette size={28} />
+            </span>
+          )}
+          <div className="flex flex-col gap-1.5">
+            <Button size="sm" loading={busy} onClick={() => pickerRef.current?.click()}>
+              <ImagePlus size={13} /> {settings.avatar ? 'Replace' : 'Upload image'}
+            </Button>
+            {settings.avatar && (
+              <Button size="sm" variant="ghost" className="text-danger" onClick={() => void clear()}>
+                Remove
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid flex-1 gap-4 sm:grid-cols-2">
+          <Field label="Name" hint="Replaces &ldquo;Creator OS&rdquo;">
+            <Input
+              value={settings.appName}
+              onChange={(e) => setSettings({ appName: e.target.value })}
+              placeholder="Creator OS"
+            />
+          </Field>
+          <Field label="Line underneath" hint="Your name, handle, or anything">
+            <Input
+              value={settings.creatorName}
+              onChange={(e) => setSettings({ creatorName: e.target.value })}
+              placeholder="Your command centre"
+            />
+          </Field>
+        </div>
+      </div>
+
+      <input
+        ref={pickerRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) void choose(f)
+          e.target.value = ''
+        }}
+      />
+
+      <p className="mt-4 text-[11.5px] text-faint">
+        Any shape works &mdash; it gets centre-cropped to a square and shrunk to 256px, so even a
+        large photo only costs a few kilobytes to store and sync.
+      </p>
+    </Card>
   )
 }
 

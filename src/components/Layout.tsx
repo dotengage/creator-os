@@ -89,20 +89,35 @@ export function ThemePicker({ compact }: { compact?: boolean }) {
 }
 
 /* ----------------------------------------------------------------- brand */
-const Brand = () => {
+const Brand = ({ onNavigate }: { onNavigate?: () => void }) => {
   const { settings } = useStore()
+  const navigate = useNavigate()
+  const name = settings.appName || 'Creator OS'
+
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent text-accent-ink shadow-soft">
-        <Palette size={17} />
-      </div>
-      <div className="min-w-0">
-        <p className="truncate text-[14px] font-bold leading-tight tracking-[-0.01em] text-ink">Creator OS</p>
-        <p className="truncate text-[11.5px] leading-tight text-muted">
+    <button
+      onClick={() => { onNavigate?.(); navigate('/settings') }}
+      title="Edit your name and picture"
+      className="group flex w-full items-center gap-2.5 rounded-xl p-1 text-left transition-colors hover:bg-elevated"
+    >
+      {settings.avatar ? (
+        <img
+          src={settings.avatar}
+          alt=""
+          className="h-9 w-9 shrink-0 rounded-xl object-cover shadow-soft"
+        />
+      ) : (
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent text-accent-ink shadow-soft">
+          <Palette size={17} />
+        </span>
+      )}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[14px] font-bold leading-tight tracking-[-0.01em] text-ink">{name}</span>
+        <span className="block truncate text-[11.5px] leading-tight text-muted">
           {settings.creatorName || 'Your command centre'}
-        </p>
-      </div>
-    </div>
+        </span>
+      </span>
+    </button>
   )
 }
 
@@ -147,7 +162,7 @@ function Sidebar() {
   const groups: NavEntry['group'][] = ['work', 'money', 'library']
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[244px] flex-col border-r border-line bg-surface md:flex">
-      <div className="px-4 py-5"><Brand /></div>
+      <div className="px-3 py-5"><Brand /></div>
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
         {groups.map((g) => (
           <div key={g}>
@@ -202,8 +217,8 @@ function MobileNav() {
               className="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-line bg-surface pb-[max(1rem,env(safe-area-inset-bottom))]"
             >
               <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-line" />
-              <div className="flex items-center justify-between px-5 pb-1 pt-4">
-                <Brand />
+              <div className="flex items-center justify-between gap-2 px-4 pb-1 pt-4">
+                <Brand onNavigate={() => setMore(false)} />
                 <IconButton label="Close" onClick={() => setMore(false)}><X size={18} /></IconButton>
               </div>
               <div className="grid grid-cols-2 gap-1.5 px-4 py-3">
@@ -290,17 +305,22 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         )}
         <main id="scroll-root" className="mx-auto w-full max-w-[1240px] px-4 pb-28 pt-5 sm:px-6 md:pb-12 md:pt-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname.split('/')[1] || 'home'}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          {/*
+            Deliberately NOT wrapped in <AnimatePresence mode="wait">. That mode
+            withholds the incoming page until the outgoing one reports its exit
+            animation finished — and requestAnimationFrame is paused while a tab
+            sits in the background, so that report can simply never arrive and
+            the page stays blank until a reload. A keyed element that only
+            animates in cannot get stuck: React has already mounted the content
+            whether or not the animation ever runs. The fade is a plain CSS
+            keyframe for the same reason: it runs off the document timeline
+            rather than requestAnimationFrame. It moves the element only, never
+            its opacity, so even a completely stalled animation shows readable
+            content rather than an empty screen.
+          */}
+          <div key={location.pathname.split('/')[1] || 'home'} className="animate-rise">
+            {children}
+          </div>
         </main>
       </div>
     </div>

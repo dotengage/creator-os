@@ -29,8 +29,14 @@ export default {
       },
       keyframes: {
         'fade-up': { '0%': { opacity: '0', transform: 'translateY(6px)' }, '100%': { opacity: '1', transform: 'none' } },
+        // Transform only, no opacity: used for whole-page entrances so that a
+        // throttled tab can never leave the content sitting at opacity 0.
+        rise: { '0%': { transform: 'translateY(6px)' }, '100%': { transform: 'none' } },
       },
-      animation: { 'fade-up': 'fade-up .28s cubic-bezier(.22,1,.36,1) both' },
+      animation: {
+        'fade-up': 'fade-up .28s cubic-bezier(.22,1,.36,1) both',
+        rise: 'rise .28s cubic-bezier(.22,1,.36,1) both',
+      },
     },
   },
   plugins: [],

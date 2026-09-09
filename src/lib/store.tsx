@@ -9,6 +9,8 @@ const STATE_VERSION = 1
 /* ---------------------------------------------------------------- defaults */
 export const defaultSettings = (): Settings => ({
   theme: 'light',
+  appName: 'Creator OS',
+  avatar: '',
   creatorName: '',
   currency: 'INR',
   currencySymbol: '₹',
