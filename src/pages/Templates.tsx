@@ -252,7 +252,7 @@ export default function Templates() {
                 value={editing.body}
                 onChange={(e) => setEditing({ ...editing, body: e.target.value })}
                 placeholder="Paste the thing you keep rewriting…"
-                className="font-mono text-[12.5px]"
+                className="text-[14px]"
               />
             </Field>
 

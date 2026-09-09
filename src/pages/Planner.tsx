@@ -633,7 +633,7 @@ function PieceModal({ piece, isNew, accent, inspirations, onChange, onClose, onS
 
         <Field label="Script">
           <Textarea rows={12} value={piece.script} onChange={(e) => set('script', e.target.value)}
-            placeholder={'HOOK (0-2s)\n\nHOLD (2-8s)\n\nBODY\n\nPAYOFF + CTA'} className="font-mono text-[12.5px]" />
+            placeholder={'HOOK (0-2s)\n\nHOLD (2-8s)\n\nBODY\n\nPAYOFF + CTA'} className="text-[14px]" />
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">

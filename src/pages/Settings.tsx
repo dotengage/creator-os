@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import {
-  AlertTriangle, Database, Download, FileJson, ImagePlus, Palette, Sparkles,
-  Trash2, Upload, User, X,
+  AlertTriangle, Database, Download, Droplet, FileJson, ImagePlus, Palette,
+  Sparkles, Trash2, Upload, User, X,
 } from 'lucide-react'
 import { demoState, emptyState, useStore } from '../lib/store'
 import type { AppState, GstType, InvoiceTemplate, ThemeName } from '../lib/types'
@@ -208,6 +208,8 @@ export default function Settings() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <BrandCard />
 
+        <PdfColourCard />
+
         {/* -------------------------------------------------------- theme */}
         <Card className="p-4 sm:p-5 lg:col-span-2">
           <SectionTitle icon={<Palette size={15} />} title="Appearance" hint="Everything else recolours to match." />
@@ -297,27 +299,13 @@ export default function Settings() {
               </strong>
             </p>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Default template">
-                <Select value={settings.defaultTemplate} onChange={(e) => setSettings({ defaultTemplate: e.target.value as InvoiceTemplate })}>
-                  <option value="modern">Modern</option>
-                  <option value="classic">Classic</option>
-                  <option value="minimal">Minimal</option>
-                </Select>
-              </Field>
-              <Field label="Default theme colour">
-                <div className="flex items-center gap-2">
-                  <label className="relative h-10 w-14 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-line"
-                    style={{ background: settings.defaultThemeColor }}>
-                    <input type="color" value={settings.defaultThemeColor}
-                      onChange={(e) => setSettings({ defaultThemeColor: e.target.value })}
-                      className="absolute inset-0 cursor-pointer opacity-0" />
-                  </label>
-                  <Input value={settings.defaultThemeColor} onChange={(e) => setSettings({ defaultThemeColor: e.target.value })}
-                    className="font-mono text-[12.5px]" />
-                </div>
-              </Field>
-            </div>
+            <Field label="Default template" hint="Colour is set under PDF exports above">
+              <Select value={settings.defaultTemplate} onChange={(e) => setSettings({ defaultTemplate: e.target.value as InvoiceTemplate })}>
+                <option value="modern">Modern</option>
+                <option value="classic">Classic</option>
+                <option value="minimal">Minimal</option>
+              </Select>
+            </Field>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Default GST">
@@ -412,6 +400,151 @@ export default function Settings() {
         </Card>
       </div>
     </>
+  )
+}
+
+/* ------------------------------------------------------- pdf colour card */
+const PDF_PRESETS = [
+  { hex: '#4f46e5', name: 'Indigo' },
+  { hex: '#1f2937', name: 'Graphite' },
+  { hex: '#0f766e', name: 'Teal' },
+  { hex: '#15803d', name: 'Forest' },
+  { hex: '#1d4ed8', name: 'Blue' },
+  { hex: '#b45309', name: 'Amber' },
+  { hex: '#c2410c', name: 'Rust' },
+  { hex: '#be123c', name: 'Crimson' },
+  { hex: '#7c3aed', name: 'Violet' },
+  { hex: '#0e7490', name: 'Cyan' },
+]
+
+const isHex = (v: string) => /^#[0-9a-fA-F]{6}$/.test(v.trim())
+
+function PdfColourCard() {
+  const { state, settings, setSettings, update } = useStore()
+  const toast = useToast()
+  const confirm = useConfirm()
+  const colour = settings.defaultThemeColor
+
+  // Local draft so a half-typed hex does not fight the colour picker.
+  const [draft, setDraft] = useState(colour)
+  const [seen, setSeen] = useState(colour)
+  if (colour !== seen) {
+    setSeen(colour)
+    setDraft(colour)
+  }
+
+  const commitHex = (v: string) => {
+    setDraft(v)
+    const withHash = v.startsWith('#') ? v : '#' + v
+    if (isHex(withHash)) setSettings({ defaultThemeColor: withHash.toLowerCase() })
+  }
+
+  // Invoices store their own colour at creation, so older ones keep the old one.
+  const outdated = state.invoices.filter((i) => i.themeColor !== colour).length
+
+  const applyToAll = async () => {
+    const ok = await confirm({
+      title: 'Recolour ' + outdated + ' existing ' + (outdated === 1 ? 'invoice' : 'invoices') + '?',
+      message: 'Each invoice keeps the colour it was made with, so older ones still export in the old shade. This brings them all into line.',
+      confirmLabel: 'Recolour them',
+    })
+    if (!ok) return
+    update((d) => {
+      for (const inv of d.invoices) inv.themeColor = colour
+    })
+    toast('Every invoice now uses this colour')
+  }
+
+  return (
+    <Card className="p-4 sm:p-5 lg:col-span-2">
+      <SectionTitle
+        icon={<Droplet size={15} />}
+        title="PDF exports"
+        hint="The accent colour on every PDF you export: invoices, scripts, templates and ideas. The page stays white; this tints headings, rules and totals."
+      />
+
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+        <div className="min-w-0 flex-1 space-y-4">
+          <div>
+            <span className="label">Preset colours</span>
+            <div className="flex flex-wrap gap-2">
+              {PDF_PRESETS.map((preset) => (
+                <button
+                  key={preset.hex}
+                  onClick={() => setSettings({ defaultThemeColor: preset.hex })}
+                  title={preset.name}
+                  aria-label={preset.name}
+                  aria-pressed={colour.toLowerCase() === preset.hex}
+                  className={cx(
+                    'h-9 w-9 rounded-full border-2 transition-transform duration-200 active:scale-90',
+                    colour.toLowerCase() === preset.hex ? 'scale-110 border-ink' : 'border-line hover:scale-105',
+                  )}
+                  style={{ background: preset.hex }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Custom colour">
+              <div className="flex items-center gap-2">
+                <label
+                  className="relative h-10 w-14 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-line"
+                  style={{ background: colour }}
+                >
+                  <input
+                    type="color"
+                    value={isHex(colour) ? colour : '#4f46e5'}
+                    onChange={(e) => setSettings({ defaultThemeColor: e.target.value })}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  />
+                </label>
+                <Input
+                  value={draft}
+                  onChange={(e) => commitHex(e.target.value)}
+                  placeholder="#4f46e5"
+                  aria-label="Hex colour"
+                  className="font-mono text-[12.5px]"
+                />
+              </div>
+            </Field>
+
+            {!!outdated && (
+              <div className="flex items-end">
+                <Button block onClick={() => void applyToAll()}>
+                  Apply to {outdated} older {outdated === 1 ? 'invoice' : 'invoices'}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <p className="text-[11.5px] leading-relaxed text-faint">
+            New invoices start from this colour, and any single invoice can still be given its own
+            shade on its page without affecting the rest.
+          </p>
+        </div>
+
+        <div className="w-full shrink-0 lg:w-[236px]">
+          <span className="label">Preview</span>
+          <div className="overflow-hidden rounded-xl border border-line bg-white shadow-soft">
+            <div className="px-3 py-2.5" style={{ background: colour }}>
+              <div className="h-2 w-16 rounded-full bg-white/90" />
+              <div className="mt-1.5 h-1.5 w-10 rounded-full bg-white/50" />
+            </div>
+            <div className="space-y-1.5 p-3">
+              <div className="h-1.5 w-2/3 rounded-full bg-neutral-200" />
+              <div className="h-1.5 w-1/2 rounded-full bg-neutral-200" />
+              <div className="mt-2 h-2 w-full rounded-sm" style={{ background: colour, opacity: 0.22 }} />
+              <div className="h-1.5 w-3/4 rounded-full bg-neutral-200" />
+              <div className="h-1.5 w-2/3 rounded-full bg-neutral-200" />
+              <div className="mt-2 flex justify-end">
+                <div className="h-5 w-20 rounded" style={{ background: colour }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
   )
 }
 
