@@ -25,11 +25,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # Pages must already be enabled with Source = GitHub Actions. The action
+      # can create the site itself, but only with repo-admin rights that the
+      # workflow token is never granted, so that switch is flipped by hand once.
       - uses: actions/configure-pages@v5
-        with:
-          # Switch Pages on automatically instead of needing a manual visit to
-          # Settings -> Pages on a fresh clone of this repo.
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
