@@ -184,3 +184,38 @@ input[type='date'], input[type='month'] { min-height: 1.4em; }
     transition-duration: .001ms !important;
   }
 }
+
+/* --------------------------------------------------------- touch zooming */
+/*
+ * Two different accidental zooms on phones, two different causes.
+ *
+ * 1. Double-tap to zoom. `manipulation` keeps scrolling and deliberate pinch
+ *    working while dropping the double-tap gesture, so a quick second tap on a
+ *    card or a button no longer lurches the page.
+ * 2. Landscape text inflation on iOS, which `text-size-adjust` pins to 100%.
+ */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  touch-action: manipulation;
+}
+
+/*
+ * 3. Focus zoom. iOS Safari zooms the whole page in whenever you tap into a
+ *    field whose text is smaller than 16px, and never zooms back out. The only
+ *    reliable cure is to not go under 16px on touch screens — so the floor is
+ *    raised here rather than by hand-editing every field, which would also
+ *    leave the next new input to rediscover the bug. !important is needed to
+ *    beat Tailwind's size utilities, which are single classes like the ones
+ *    these selectors would otherwise tie with.
+ */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

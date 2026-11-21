@@ -167,3 +167,7 @@ src/
   under a `.unreadable.<timestamp>` key instead.
 - `node scripts/make-icons.mjs` regenerates the app icons; it encodes the PNGs
   with Node's zlib and needs no image dependency.
+- Form controls are forced to 16px under `(pointer: coarse)`. iOS Safari zooms
+  the page whenever a focused field is smaller than that and never zooms back
+  out, so the floor is set globally rather than per field — otherwise the next
+  new input reintroduces it.
