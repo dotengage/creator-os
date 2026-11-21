@@ -167,6 +167,10 @@ src/
   under a `.unreadable.<timestamp>` key instead.
 - `node scripts/make-icons.mjs` regenerates the app icons; it encodes the PNGs
   with Node's zlib and needs no image dependency.
+- Touch zoom is blocked in three layers, because no single one covers every
+  browser: the viewport meta (Android Chrome), `touch-action: pan-x pan-y` on
+  the body, and `lib/no-zoom.ts` for the `gesture*` events only WebKit fires.
+  Scrolling and desktop zoom are untouched.
 - Form controls are forced to 16px under `(pointer: coarse)`. iOS Safari zooms
   the page whenever a focused field is smaller than that and never zooms back
   out, so the floor is set globally rather than per field — otherwise the next

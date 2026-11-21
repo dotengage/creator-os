@@ -189,9 +189,9 @@ input[type='date'], input[type='month'] { min-height: 1.4em; }
 /*
  * Two different accidental zooms on phones, two different causes.
  *
- * 1. Double-tap to zoom. `manipulation` keeps scrolling and deliberate pinch
- *    working while dropping the double-tap gesture, so a quick second tap on a
- *    card or a button no longer lurches the page.
+ * 1. Pinch and double-tap zoom, both dropped so the layout cannot drift out of
+ *    position mid-use. Scrolling is unaffected. iOS needs JavaScript as well,
+ *    which lives in lib/no-zoom.ts.
  * 2. Landscape text inflation on iOS, which `text-size-adjust` pins to 100%.
  */
 html {
@@ -200,7 +200,9 @@ html {
 }
 
 body {
-  touch-action: manipulation;
+  /* pan-x pan-y = scrolling only: no pinch zoom, no double-tap zoom.
+     `manipulation` would still permit pinch. */
+  touch-action: pan-x pan-y;
 }
 
 /*
